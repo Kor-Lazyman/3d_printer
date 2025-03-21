@@ -1,5 +1,5 @@
 from config_SimPy import *
-
+import salabim as sim
 
 class Item:
     """
@@ -131,7 +131,7 @@ class Order:
         return False
 
 
-class Customer:
+class Customer(sim.Component):
     """
     Class representing a customer in the system.
 
@@ -144,6 +144,7 @@ class Customer:
     """
 
     def __init__(self, env, order_receiver, logger):
+        super().__init__()
         self.env = env
         self.order_receiver = order_receiver
         self.logger = logger
@@ -152,7 +153,7 @@ class Customer:
         self.order_counter = 1
 
         # Automatically start the process when the Customer is created
-        self.processing = env.process(self.create_order())
+        #self.processing = sim.Event(action=lambda: self.activate(), delay=0)
 
     def get_next_order_id(self):
         """Get next order ID and increment counter"""
@@ -160,7 +161,7 @@ class Customer:
         self.order_counter += 1
         return order_id
 
-    def create_order(self):
+    def process(self):#create_order
         """Create orders periodically"""
         while True:
             # Create a new order
@@ -176,7 +177,7 @@ class Customer:
             self.send_order(order)
 
             # Wait for next order cycle
-            yield self.env.timeout(CUST_ORDER_CYCLE)
+            self.hold(CUST_ORDER_CYCLE)
 
     def send_order(self, order):
         """Send the order to the receiver"""

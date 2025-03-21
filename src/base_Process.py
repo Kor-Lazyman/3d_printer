@@ -156,7 +156,7 @@ class Process:
                     if not self.job_store.is_empty:
                         # print(
                         #     f"[DEBUG] {self.name_process}: attempting to get job {i+1}")
-                        job = yield self.job_store.get()
+                        job = self.job_store.get()
                         # print(
                         #     f"[DEBUG] {self.name_process}: retrieved job {job.id_job}")
                         jobs_to_assign.append(job)
@@ -205,7 +205,6 @@ class Process:
 
         # Request processor resource
         request = processor_resource.request()
-        yield request
 
         # Calculate and wait for processing time
         processing_time = processor_resource.processing_time

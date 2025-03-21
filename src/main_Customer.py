@@ -1,10 +1,10 @@
-import simpy
+#import simpy
 import time
 import random
 from config_SimPy import *
 from base_Customer import Customer, SimpleOrderReceiver
-
-
+import salabim as sim
+sim.yieldless(True)
 class SimpleLogger:
     """Class providing simple logging functionality"""
 
@@ -13,7 +13,7 @@ class SimpleLogger:
 
     def log_event(self, event_type, message):
         """Log events with timestamp"""
-        current_time = self.env.now
+        current_time = self.env.now()
         days = int(current_time // (24 * 60))
         hours = int((current_time % (24 * 60)) // 60)
         minutes = int(current_time % 60)
@@ -36,7 +36,7 @@ def run_customer_simulation(seed=None):
         random.seed(seed)
 
     # Create simulation environment
-    env = simpy.Environment()
+    env = sim.Environment()
 
     # Create simple logger
     logger = SimpleLogger(env)
@@ -45,13 +45,12 @@ def run_customer_simulation(seed=None):
     order_receiver = SimpleOrderReceiver(env, logger)
 
     # Create and start customer
-    Customer(env, order_receiver, logger)
-
+    customer = Customer(env, order_receiver, logger)
     # Start time measurement
     start_time = time.time()
 
     # Run simulation
-    env.run(until=SIM_TIME)
+    env.run(till=SIM_TIME)
 
     # End time measurement
     end_time = time.time()

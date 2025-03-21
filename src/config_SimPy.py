@@ -4,7 +4,7 @@ import random
 """ Simulation settings """
 
 # Simulation time settings
-SIM_TIME = 7 * 24 * 60  # (unit: minutes)
+SIM_TIME = (7-1) * 24 * 60  # (unit: minutes)
 
 # Logging and visualization settings
 EVENT_LOGGING = True  # Event logging enable/disable flag

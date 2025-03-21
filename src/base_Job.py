@@ -1,5 +1,5 @@
-import simpy
-
+#import simpy
+import salabim as sim
 
 class Job:
     """
@@ -31,7 +31,7 @@ class Job:
         self.processing_history = []  # Will store each process step details
 
 
-class JobStore(simpy.Store):
+class JobStore(sim.Component):
     """
     Job queue management class that inherits SimPy Store
 
@@ -45,33 +45,32 @@ class JobStore(simpy.Store):
         super().__init__(env)
         self.name = name
         self.queue_length_history = []  # Track queue length history
+        self.store = sim.Store(self.name)
 
-    def put(self, item):
+    def to_store(self, item):
         """Add Job to Store (override)"""
-        result = super().put(item)
+        result = super().to_store(item)
         # Record queue length
-        self.queue_length_history.append((self._env.now, len(self.items)))
+        self.queue_length_history.append((self.env.now, self.store._length))
         return result
 
-    def get(self):
+    def from_store(self):
         """Get Job from queue (override)"""
-        result = super().get()
+        result = super().from_store()
         # Record queue length when getting result
 
         # Use event chain instead of callback
         def process_get(env, result):
-            job = yield result
-            self.queue_length_history.append((self._env.now, len(self.items)))
-            return job
-
-        return self._env.process(process_get(self._env, result))
+            self.queue_length_history.append((self.env.now, self.store._length))
+        process_get(self.env, result)
+        return result
 
     @property
     def is_empty(self):
         """Check if queue is empty"""
-        return len(self.items) == 0
+        return self.store._length == 0
 
     @property
     def size(self):
         """Current queue size"""
-        return len(self.items)
+        return self.store._length

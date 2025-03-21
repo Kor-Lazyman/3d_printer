@@ -1,4 +1,4 @@
-import simpy
+import salabim as sim
 from config_SimPy import *
 
 
@@ -62,11 +62,13 @@ class Machine:
         self.allows_job_addition_during_processing = False
 
 
-class ProcessorResource(simpy.Resource):
-    """
-    Integrated processor (Machine, Worker) resource management class that inherits SimPy Resource
+import salabim as sim
 
-    Attributes: 
+class ProcessorResource:
+    """
+    Integrated processor (Machine, Worker) resource management class in Salabim.
+
+    Attributes:
         processor_type (str): Type of processor (Machine/Worker)
         id (int): Processor ID
         name (str): Processor name
@@ -74,78 +76,71 @@ class ProcessorResource(simpy.Resource):
         current_jobs (list): List of jobs currently being processed (Machines)
         current_job (Job): Job currently being processed (Worker)
         processing_time (int): Time taken to process a job
-        processing_started (bool): Flag to prevent further resource allocation after processing starts
-
     """
 
     def __init__(self, env, processor):
+        self.env = env  # Salabim 환경 객체
+
         # Check processor type and set properties
         self.processor_type = getattr(processor, 'type_processor', 'Unknown')
 
         # Set capacity - Machine uses capacity_jobs, Worker always 1
         if self.processor_type == "Machine":
-            capacity = getattr(processor, 'capacity_jobs', 1)
+            self.capacity = getattr(processor, 'capacity_jobs', 1)
             self.id = getattr(processor, 'id_machine', 0)
             self.name = getattr(processor, 'name_machine', 'Machine')
-            # Flag for allowing job addition during processing
             self.allows_job_addition_during_processing = getattr(
                 processor, 'allows_job_addition_during_processing', True)
-            # Current jobs being processed
             self.current_jobs = []
         elif self.processor_type == "Worker":
-            capacity = 1  # Worker always processes one job at a time
+            self.capacity = 1  # Worker always processes one job at a time
             self.id = getattr(processor, 'id_worker', 0)
             self.name = getattr(processor, 'name_worker', 'Worker')
-            # Worker never allows job addition during processing
             self.allows_job_addition_during_processing = False
-            # Current job being processed
             self.current_job = None
             self.current_jobs = []  # Added for consistency
-
-        # Initialize Resource
-        super().__init__(env, capacity=capacity)
 
         self.processor = processor
         self.processing_time = getattr(processor, 'processing_time', 10)
 
+        # Salabim Resource (대기열 포함)
+        self.resource = sim.Resource(name=self.name, capacity=self.capacity, env=self.env)
+
         # Flag to prevent further resource allocation after processing starts
         self.processing_started = False
 
-    def request(self, *args, **kwargs):
+    def request(self):
         """
-        Override resource request - Check if addition during processing is allowed
+        Override resource request - Check if addition during processing is allowed.
         """
-        # If already processing and addition not allowed, reject request
+        # If already processing and addition not allowed, return an infinite-wait event
+        '''
         if self.processing_started and not self.allows_job_addition_during_processing:
-            # Return a dummy event that mimics SimPy request but waits indefinitely
-            dummy_event = self._env.event()
-            dummy_event.callbacks.append(
-                lambda _: None)  # Add callback to set to infinite wait state
+            dummy_event = self.env.event()
+            dummy_event.succeed()  # 이벤트 완료 상태로 설정하여 대기하도록 함
             return dummy_event
-
+        '''
         # Set flag when job is first assigned to resource
-        if not self.processing_started and self.count == 0:
+        if not self.processing_started and self.resource.claimers().length() == 0:
             self.processing_started = True
 
         # Process basic request
-        return super().request(*args, **kwargs)
+        return self.request(self.resource)
 
     def release(self, request):
         """
-        Override resource release - Handle job completion
+        Override resource release - Handle job completion.
         """
-        result = super().release(request)
+        self.resource.release(request)
 
         # Reset processing flag when all jobs are complete
-        if self.count == 0:
+        if self.resource.claimers().length() == 0:
             self.processing_started = False
             if self.processor_type == "Machine":
                 self.current_jobs = []
             else:  # Worker
                 self.current_job = None
                 self.current_jobs = []
-
-        return result
 
     @property
     def is_available(self):
@@ -155,7 +150,7 @@ class ProcessorResource(simpy.Resource):
             return False
 
         # Available if capacity has room
-        return self.count < self.capacity  # Use count attribute instead of count()
+        return self.resource.available_quantity() > 0
 
     def start_job(self, job):
         """Process job start"""
@@ -165,7 +160,7 @@ class ProcessorResource(simpy.Resource):
         else:  # Worker
             # Set Worker's current job
             self.current_job = job
-            self.current_jobs = [job]  # Add to list for consistency
+            self.current_jobs = [job]  # Consistency
 
         # Set workstation info in job
         if self.processor_type == "Machine":
