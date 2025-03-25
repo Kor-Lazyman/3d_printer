@@ -1,10 +1,10 @@
 import random
 from config_SimPy import *
-from base_Process import Process
+from base_Process import Process, Job_Trigger
 from specialized_Processor import Mach_3DPrint, Mach_Wash, Mach_Dry, Worker_Inspect
 
 
-class Proc_Build(Process):
+class Proc_Build(Job_Trigger):
     """
     3D Printing Process
     inherits from Process class  
@@ -19,6 +19,7 @@ class Proc_Build(Process):
 
     def apply_special_processing(self, processor, jobs):
         """3D Printing special processing - possibility of defects"""
+        '''
         for job in jobs:
             for item in job.list_items:
                 if random.random() < DEFECT_RATE_PROC_BUILD:
@@ -26,9 +27,10 @@ class Proc_Build(Process):
                 else:
                     item.is_defect = False
         return True
+        '''
+        return True
 
-
-class Proc_Wash(Process):
+class Proc_Wash(Job_Trigger):
     """
     Washing Process
     inherits from Process class   
@@ -42,7 +44,7 @@ class Proc_Wash(Process):
             self.register_processor(Mach_Wash(i+1))
 
 
-class Proc_Dry(Process):
+class Proc_Dry(Job_Trigger):
     """
     Drying Process
     inherits from Process class
@@ -56,7 +58,7 @@ class Proc_Dry(Process):
             self.register_processor(Mach_Dry(i+1))
 
 
-class Proc_Inspect(Process):
+class Proc_Inspect(Job_Trigger):
     """
     Inspection Process
     inherits from Process class

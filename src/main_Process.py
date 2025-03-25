@@ -1,12 +1,11 @@
 # main_Process.py
-import simpy
 import random
 from base_Customer import Item
 from base_Job import Job
-from base_Process import Process
+from base_Process import Process, Job_Trigger
 from base_Processor import Machine, Worker
 from log_SimPy import *
-
+import salabim as sim
 
 class SimpleLogger:
     def __init__(self):
@@ -14,7 +13,7 @@ class SimpleLogger:
 
     def log_event(self, event_type, message):
         """Log an event with a timestamp"""
-        current_time = env.now if 'env' in globals() else 0
+        current_time = self.env.now() if 'env' in globals() else 0
         days = int(current_time // (24 * 60))
         hours = int((current_time % (24 * 60)) // 60)
         minutes = int(current_time % 60)
@@ -46,12 +45,12 @@ def run_process_validation():
 
     # Set up simulation environment
     global env
-    env = simpy.Environment()
+    env = sim.Environment()
     logger = SimpleLogger()
 
     # Create basic processes (just 2)
-    process_a = Process("Process_A", env, logger)
-    process_b = Process("Process_B", env, logger)
+    process_a = Job_Trigger(name="Process_A", env = env, logger = logger)
+    process_b = Job_Trigger(name="Process_B", env = env, logger = logger)
 
     # Register processors for each process
     machine1 = Machine(1, "Process_A", f"Machine_A{1}", 30, 2)
@@ -75,8 +74,8 @@ def run_process_validation():
     # Run simulation
     print("\nStarting simulation...")
     sim_duration = 500  # Test simulation duration (minutes)
-    env.process(run_until(env, sim_duration))
-    env.run(until=sim_duration)  # Explicitly add until parameter
+    #env.process(run_until(env, sim_duration))
+    env.run(till=sim_duration)  # Explicitly add until parameter
 
     # Check results
     print("\n================ Simulation Results ================")

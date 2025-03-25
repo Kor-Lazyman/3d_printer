@@ -1,7 +1,7 @@
 #import simpy
 import salabim as sim
 
-class Job:
+class Job(sim.Component):
     """
     Job class to represent a job in the manufacturing process
 
@@ -17,7 +17,8 @@ class Job:
         processing_history (list): List of processing history
     """
 
-    def __init__(self, id_job, list_items):
+    def __init__(self, id_job, list_items, **kwargs):
+        super().__init__(**kwargs)
         self.id_job = id_job
         self.workstation = {"Process": None, "Machine": None, "Worker": None}
         self.list_items = list_items
@@ -31,7 +32,7 @@ class Job:
         self.processing_history = []  # Will store each process step details
 
 
-class JobStore(sim.Component):
+class JobStore(sim.Store):
     """
     Job queue management class that inherits SimPy Store
 
@@ -41,36 +42,35 @@ class JobStore(sim.Component):
         queue_length_history (list): Queue length
     """
 
-    def __init__(self, env, name="JobStore"):
-        super().__init__(env)
-        self.name = name
+    def __init__(self, name, **kwargs):
+        super().__init__(**kwargs)
+        self._name = name
         self.queue_length_history = []  # Track queue length history
-        self.store = sim.Store(self.name)
 
-    def to_store(self, item):
+    def add(self, item):
+        #print(self.store)
         """Add Job to Store (override)"""
-        result = super().to_store(item)
+        result = super().add(item)
         # Record queue length
-        self.queue_length_history.append((self.env.now, self.store._length))
+        self.queue_length_history.append((self.env.now(), self._length))
         return result
 
     def from_store(self):
         """Get Job from queue (override)"""
-        result = super().from_store()
+        result = super().pop()
         # Record queue length when getting result
-
         # Use event chain instead of callback
         def process_get(env, result):
-            self.queue_length_history.append((self.env.now, self.store._length))
+            self.queue_length_history.append((self.env.now(), self._length))
         process_get(self.env, result)
         return result
 
     @property
     def is_empty(self):
         """Check if queue is empty"""
-        return self.store._length == 0
+        return self._length == 0
 
     @property
     def size(self):
         """Current queue size"""
-        return self.store._length
+        return self._length

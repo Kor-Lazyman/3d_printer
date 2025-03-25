@@ -23,21 +23,19 @@ class Manager(OrderReceiver):
         self.next_job_id = 1
 
         # Create and connect manufacturing processes
-        self.setup_processes()
+        #self.setup_processes()
 
         # Tracking completed jobs and orders
         self.completed_orders = []
 
         # When calling setup_processes, the manager (self) itself is also passed as an argument
-        self.setup_processes(manager=self)
-
-    def setup_processes(self, manager=None):
+        #self.setup_processes(manager=self)
         """Create and connect all manufacturing processes"""
         # Create processes
         self.proc_build = Proc_Build(self.env, self.logger)
         self.proc_wash = Proc_Wash(self.env, self.logger)
         self.proc_dry = Proc_Dry(self.env, self.logger)
-        self.proc_inspect = Proc_Inspect(self.env, manager, self.logger)
+        self.proc_inspect = Proc_Inspect(self.env, self, self.logger)
 
         # Connect processes
         self.proc_build.connect_to_next_process(self.proc_wash)
@@ -47,6 +45,8 @@ class Manager(OrderReceiver):
         if self.logger:
             self.logger.log_event(
                 "Manager", "Manufacturing processes created and connected")
+    #def setup_processes(self, manager=None):
+        
 
     def receive_order(self, order):
         """Process incoming order from Customer"""
@@ -55,7 +55,7 @@ class Manager(OrderReceiver):
                 "Order", f"Received Order {order.id_order} with {order.num_patients} patients")
 
         # Mark order start time
-        order.time_start = self.env.now
+        order.time_start = self.env.now()
 
         # Convert order to jobs based on policy
         self.create_jobs_for_proc_build(order)
@@ -65,10 +65,11 @@ class Manager(OrderReceiver):
     def create_jobs_for_proc_build(self, order):
         """Convert Order to Jobs based on POLICY_ORDER_TO_JOB"""
         all_patients = order.list_patients
-
+        count = 0
         for patient in all_patients:
             patient_items = patient.list_items
-
+            count +=1
+            print(count,len(patient_items))
             # If patient's items fit within PALLET_SIZE_LIMIT, create a single job
             if len(patient_items) <= PALLET_SIZE_LIMIT:
                 # Create a job with all items from this patient
@@ -81,6 +82,7 @@ class Manager(OrderReceiver):
                         "Manager", f"Created job {job.id_job} for patient {patient.id_patient} with {len(patient_items)} items")
                 self.proc_build.add_to_queue(job)
             else:
+                
                 # Patient's items exceed PALLET_SIZE_LIMIT, apply splitting policy
                 if POLICY_ORDER_TO_JOB == "MAX_PER_JOB":
                     # Split items into multiple jobs of roughly equal size

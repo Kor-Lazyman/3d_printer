@@ -64,7 +64,7 @@ class Machine:
 
 import salabim as sim
 
-class ProcessorResource:
+class ProcessorResource(sim.Resource):
     """
     Integrated processor (Machine, Worker) resource management class in Salabim.
 
@@ -78,33 +78,33 @@ class ProcessorResource:
         processing_time (int): Time taken to process a job
     """
 
-    def __init__(self, env, processor):
+    def __init__(self, env, processor,**kwargs):
+        super().__init__(**kwargs)
         self.env = env  # Salabim 환경 객체
 
         # Check processor type and set properties
         self.processor_type = getattr(processor, 'type_processor', 'Unknown')
-
+        self.num_capacity =  getattr(processor, 'capacity_jobs', 1)
         # Set capacity - Machine uses capacity_jobs, Worker always 1
         if self.processor_type == "Machine":
-            self.capacity = getattr(processor, 'capacity_jobs', 1)
+            self._capacity = getattr(processor, 'capacity_jobs', 1)
             self.id = getattr(processor, 'id_machine', 0)
-            self.name = getattr(processor, 'name_machine', 'Machine')
+            self._name = getattr(processor, 'name_machine', 'Machine')
             self.allows_job_addition_during_processing = getattr(
                 processor, 'allows_job_addition_during_processing', True)
             self.current_jobs = []
+
         elif self.processor_type == "Worker":
-            self.capacity = 1  # Worker always processes one job at a time
+            self._capacity = 1  # Worker always processes one job at a time
             self.id = getattr(processor, 'id_worker', 0)
-            self.name = getattr(processor, 'name_worker', 'Worker')
+            self._name = getattr(processor, 'name_worker', 'Worker')
             self.allows_job_addition_during_processing = False
             self.current_job = None
             self.current_jobs = []  # Added for consistency
-
+        print(f"name:{self.name()},capa{self._capacity}")
         self.processor = processor
         self.processing_time = getattr(processor, 'processing_time', 10)
-
         # Salabim Resource (대기열 포함)
-        self.resource = sim.Resource(name=self.name, capacity=self.capacity, env=self.env)
 
         # Flag to prevent further resource allocation after processing starts
         self.processing_started = False
@@ -121,27 +121,31 @@ class ProcessorResource:
             return dummy_event
         '''
         # Set flag when job is first assigned to resource
-        if not self.processing_started and self.resource.claimers().length() == 0:
+        if not self.processing_started and self.claimers().length() == 0:
             self.processing_started = True
-
+            return True
+        else:
+            return False
         # Process basic request
-        return self.request(self.resource)
+        
 
-    def release(self, request):
+    def release(self):
         """
         Override resource release - Handle job completion.
         """
-        self.resource.release(request)
-
+        
+        super().release()
+        self.num_capacity +=1
+        '''
         # Reset processing flag when all jobs are complete
-        if self.resource.claimers().length() == 0:
+        if self.claimers().length() == 0:
             self.processing_started = False
             if self.processor_type == "Machine":
                 self.current_jobs = []
             else:  # Worker
                 self.current_job = None
                 self.current_jobs = []
-
+        '''
     @property
     def is_available(self):
         """Check if processor is available"""
@@ -150,7 +154,7 @@ class ProcessorResource:
             return False
 
         # Available if capacity has room
-        return self.resource.available_quantity() > 0
+        return self.available_quantity() > 0
 
     def start_job(self, job):
         """Process job start"""

@@ -1,5 +1,5 @@
 # main.py
-import simpy
+import salabim as sim
 import random
 from base_Customer import Customer
 from manager import Manager
@@ -12,7 +12,7 @@ def run_simulation(sim_duration=SIM_TIME):
     print("================ Manufacturing Process Simulation ================")
 
     # Setup simulation environment
-    env = simpy.Environment()
+    env = sim.Environment()
 
     # Create logger with env
     logger = Logger(env)
@@ -26,9 +26,9 @@ def run_simulation(sim_duration=SIM_TIME):
     # Run simulation
     print("\nStarting simulation...")
     print(f"Simulation will run for {sim_duration} minutes")
-
+    print(sim_duration)
     # Run simulation
-    env.run(until=sim_duration)
+    env.run(till=sim_duration)
 
     # Collect and display results
     print("\n================ Simulation Results ================")
@@ -63,7 +63,17 @@ def run_simulation(sim_duration=SIM_TIME):
             logger.visualize_statistics(stats, processes)
 
     print("\n================ Simulation Ended ================")
-
+    
+    if manager.proc_inspect.completed_jobs:
+        print("\nProcessing time by process for completed jobs:")
+        for job in manager.proc_inspect.completed_jobs:
+            print(f"\nJob {job.id_job} history:")
+            for step in job.processing_history:
+                start_time = step['start_time']
+                end_time = step['end_time'] if step['end_time'] is not None else 'N/A'
+                duration = step['duration'] if step['duration'] is not None else 'N/A'
+                print(
+                    f"  {step['process']} ({step['resource_name']}): {start_time}min -> {end_time}min (duration: {duration}min)")
 
 if __name__ == "__main__":
     # Set random seed for reproducibility

@@ -4,7 +4,7 @@ import random
 """ Simulation settings """
 
 # Simulation time settings
-SIM_TIME = (7-1) * 24 * 60  # (unit: minutes)
+SIM_TIME = 6 * 24 * 60   # (unit: minutes)
 
 # Logging and visualization settings
 EVENT_LOGGING = True  # Event logging enable/disable flag
@@ -63,7 +63,7 @@ def NUM_PATIENTS_PER_ORDER(): return random.randint(
 
 
 def NUM_ITEMS_PER_PATIENT(): return random.randint(
-    50, 70)
+    54, 55)
 
 
 # Customer settings

@@ -167,7 +167,7 @@ class Customer(sim.Component):
             # Create a new order
             order_id = self.get_next_order_id()
             order = Order(order_id)
-            order.time_start = self.env.now
+            order.time_start = self.env.now()
 
             # # Log order creation
             # self.logger.log_event(

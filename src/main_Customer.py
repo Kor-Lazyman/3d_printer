@@ -4,7 +4,7 @@ import random
 from config_SimPy import *
 from base_Customer import Customer, SimpleOrderReceiver
 import salabim as sim
-sim.yieldless(True)
+
 class SimpleLogger:
     """Class providing simple logging functionality"""
 

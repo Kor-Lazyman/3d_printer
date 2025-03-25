@@ -16,7 +16,7 @@ class Logger:
     def log_event(self, event_type, message):
         """Log an event with a timestamp"""
         if EVENT_LOGGING:
-            current_time = self.env.now
+            current_time = self.env.now()
             days = int(current_time // (24 * 60))
             hours = int((current_time % (24 * 60)) // 60)
             minutes = int(current_time % 60)
@@ -64,7 +64,7 @@ class Logger:
         stats['total_completed_jobs'] = len(completed_jobs)
 
         # Process specific statistics
-        process_ids = [proc.name_process for proc in available_processes]
+        process_ids = [proc.name() for proc in available_processes]
         process_jobs = {proc_id: [] for proc_id in process_ids}
 
         for job in completed_jobs:
@@ -108,8 +108,8 @@ class Logger:
 
                     if times and lengths:
                         # Add final point if needed
-                        if times[-1] < self.env.now:
-                            times.append(self.env.now)
+                        if times[-1] < self.env.now():
+                            times.append(self.env.now())
                             lengths.append(lengths[-1])
 
                         # Calculate time-weighted average
@@ -118,8 +118,8 @@ class Logger:
                             weighted_sum += lengths[i-1] * \
                                 (times[i] - times[i-1])
 
-                        avg_length = weighted_sum / self.env.now if self.env.now > 0 else 0
-                        stats[f'{proc.name_process}_avg_queue_length'] = avg_length
+                        avg_length = weighted_sum / self.env.now() if self.env.now() > 0 else 0
+                        stats[f'{proc.name()}_avg_queue_length'] = avg_length
 
         # Count defective items if inspection process exists
         if proc_inspect and hasattr(proc_inspect, 'defective_items'):
